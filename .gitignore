@@ -1,0 +1,28 @@
+# credenciais e configuração local
+.env
+*.json.key
+*-key.json
+.df-credentials.json
+application_default_credentials.json
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# Dataform e Node
+node_modules/
+.df/
+
+# Airflow local
+airflow/logs/
+
+# dados extraídos localmente (backfill histórico)
+data/
+
+# Power BI (PBIP): cache de dados e configurações locais
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# sistema
+Thumbs.db
