@@ -1,7 +1,7 @@
 -- Databricks notebook source
 -- Par principal por token e por execução, nas últimas 12 horas; recencia 1 = execução mais recente
 CREATE OR REPLACE TEMP VIEW principal AS
-SELECT run_id, extracted_at, token_address, liquidity_usd, pair_created_at,
+SELECT run_id, extracted_at, token_address, liquidity_usd, price_usd, pair_created_at,
        ROW_NUMBER() OVER (PARTITION BY token_address ORDER BY extracted_at DESC) AS recencia
 FROM (
   SELECT s.*, ROW_NUMBER() OVER (PARTITION BY run_id, token_address
@@ -23,13 +23,20 @@ WHEN NOT MATCHED THEN INSERT (token_address, status, discovered_at, status_chang
 
 -- COMMAND ----------
 
--- Saida: idade, rug (queda >= 90% entre dois snapshots) e morte (6 snapshots < 1 mil)
+-- Saida, comparando os dois ultimos snapshots do token:
+--   aged_out: mais de 14 dias na watchlist
+--   rug:      liquidez foi a zero (LP retirado: ninguem consegue vender, o preco congela)
+--   crash:    liquidez E preco cairam >= 90% juntos (despejo)
+--   dead:     6 snapshots seguidos com liquidez < 1 mil
+-- Liquidez caindo sem o preco cair NAO aposenta: e LP saindo de pool (comum na Meteora) ou
+-- troca de par principal, e o token segue vivo. Se secar de vez, a regra dead pega.
 MERGE INTO workspace.ops_memecoins.watchlist AS w
 USING (
   SELECT w.token_address,
     CASE
       WHEN w.discovered_at < current_timestamp() - INTERVAL 14 DAYS THEN 'aged_out'
-      WHEN a.liquidity_usd <= b.liquidity_usd * 0.1 THEN 'rug'
+      WHEN a.liquidity_usd = 0 AND b.liquidity_usd > 0 THEN 'rug'
+      WHEN a.liquidity_usd <= b.liquidity_usd * 0.1 AND a.price_usd <= b.price_usd * 0.1 THEN 'crash'
       WHEN d.n_baixa = 6 THEN 'dead'
     END AS motivo
   FROM workspace.ops_memecoins.watchlist AS w
