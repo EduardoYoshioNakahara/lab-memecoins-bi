@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS workspace.ops_memecoins.watchlist (
   status            STRING    NOT NULL COMMENT 'tracked | retired',
   discovered_at     TIMESTAMP NOT NULL,
   status_changed_at TIMESTAMP NOT NULL,
-  retired_reason    STRING    COMMENT 'aged_out | dead | rug'
+  retired_reason    STRING    COMMENT 'aged_out | rug | crash | dead'
 ) COMMENT 'Universo acompanhado: quem a extração consulta a cada hora';
 
 CREATE TABLE IF NOT EXISTS workspace.ops_memecoins.run_log (
